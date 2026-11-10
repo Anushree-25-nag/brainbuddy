@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Result - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: rgba(51, 65, 85, 0.8);
+            border: 1px solid rgba(100, 116, 139, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.9);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen">
+    <!-- TOP NAVIGATION -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/dashboard" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">🧠 BrainBuddy</a>
+                <span class="text-slate-500 text-sm hidden sm:inline">/ Quiz Performance Report</span>
+            </div>
+            <a href="/quiz/{{ material.id }}" class="text-xs text-slate-400 hover:text-white transition">← Back to Quiz Dashboard</a>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-4 pt-24 pb-12">
+        <!-- SCORE OVERVIEW HEADER -->
+        <div class="glass-card rounded-2xl p-6 sm:p-8 mb-8 text-center border-t-4 
+            {% if attempt.percentage >= 80 %}border-green-500
+            {% elif attempt.percentage >= 50 %}border-amber-500
+            {% else %}border-red-500{% endif %}">
+            
+            <span class="text-xs uppercase font-semibold tracking-wider text-slate-400">Official Timed Attempt Result</span>
+            <h1 class="text-3xl font-extrabold mt-1 mb-2">{{ material.filename }}</h1>
+            
+            <div class="my-6 inline-flex flex-col items-center justify-center bg-slate-900/80 border border-slate-800 rounded-2xl px-12 py-6">
+                <p class="text-5xl font-black bg-gradient-to-r 
+                    {% if attempt.percentage >= 80 %}from-green-400 to-emerald-300
+                    {% elif attempt.percentage >= 50 %}from-amber-400 to-yellow-300
+                    {% else %}from-red-400 to-rose-300{% endif %} 
+                    bg-clip-text text-transparent">
+                    {{ "%.0f"|format(attempt.percentage) }}%
+                </p>
+                <p class="text-sm font-medium text-slate-400 mt-1">Score: {{ attempt.correct_count }} / {{ attempt.total_questions }}</p>
+            </div>
+
+            <!-- METRICS GRID -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto mt-2">
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                    <p class="text-xs text-slate-500">Correct</p>
+                    <p class="text-lg font-bold text-green-400">✅ {{ attempt.correct_count }}</p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                    <p class="text-xs text-slate-500">Incorrect</p>
+                    <p class="text-lg font-bold text-red-400">❌ {{ attempt.incorrect_count }}</p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                    <p class="text-xs text-slate-500">Unanswered</p>
+                    <p class="text-lg font-bold text-amber-400">⚠️ {{ attempt.unanswered_count }}</p>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                    <p class="text-xs text-slate-500">Time Taken</p>
+                    <p class="text-lg font-bold text-indigo-300">⏱️ {{ attempt.time_taken_seconds // 60 }}:{{ "%02d"|format(attempt.time_taken_seconds % 60) }}</p>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="flex flex-wrap justify-center gap-4 mt-8">
+                {% if attempt.incorrect_count > 0 or attempt.unanswered_count > 0 %}
+                <a href="/quiz/{{ material.id }}/practice-incorrect/{{ attempt.id }}" class="btn-primary text-white font-medium px-5 py-2.5 rounded-lg text-sm flex items-center gap-2">
+                    🎯 Practice Incorrect Questions
+                </a>
+                {% endif %}
+                <a href="/quiz/{{ material.id }}" class="btn-secondary text-slate-300 font-medium px-5 py-2.5 rounded-lg text-sm flex items-center gap-2">
+                    🔄 Retake Timed Quiz
+                </a>
+                <a href="/quiz/{{ material.id }}/practice" class="btn-secondary text-indigo-300 font-medium px-5 py-2.5 rounded-lg text-sm flex items-center gap-2">
+                    📖 Open Full Question Bank
+                </a>
+            </div>
+        </div>
+
+        <!-- WEAK TOPICS IDENTIFICATION -->
+        {% if weak_topics %}
+        <div class="glass-card rounded-2xl p-6 mb-8">
+            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                📊 Topic Mastery Analysis
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {% for topic, status in weak_topics.items() %}
+                <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+                    <span class="text-sm font-medium text-slate-200 truncate pr-2">{{ topic }}</span>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0
+                        {% if status == 'Strong' %}bg-green-500/20 text-green-300 border border-green-500/30
+                        {% elif status == 'Good' %}bg-blue-500/20 text-blue-300 border border-blue-500/30
+                        {% else %}bg-red-500/20 text-red-300 border border-red-500/30{% endif %}">
+                        {{ status }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- DETAILED QUESTION BREAKDOWN -->
+        <div class="space-y-6">
+            <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                📝 Detailed Question Analysis
+            </h2>
+
+            {% for q in questions %}
+            <div class="glass-card rounded-2xl p-6 border-l-4 
+                {% if q.is_correct %}border-green-500{% elif not q.user_answer %}border-amber-500{% else %}border-red-500{% endif %}">
+                
+                <div class="flex justify-between items-start gap-4 mb-3">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-xs font-bold text-slate-400">Q{{ loop.index }}</span>
+                        {% if q.topic %}<span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">{{ q.topic }}</span>{% endif %}
+                        <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 capitalize">{{ q.type }}</span>
+                    </div>
+                    <div>
+                        {% if q.is_correct %}
+                            <span class="text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30 px-3 py-1 rounded-full">Correct (+1)</span>
+                        {% elif not q.user_answer %}
+                            <span class="text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full">Unanswered</span>
+                        {% else %}
+                            <span class="text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30 px-3 py-1 rounded-full">Incorrect</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h3 class="text-base font-semibold text-white mb-4">{{ q.text }}</h3>
+
+                <!-- MCQ & TRUE/FALSE OPTIONS DISPLAY -->
+                {% if q.type in ['mcq', 'true_false'] %}
+                <div class="space-y-2 mb-4">
+                    {% for key, val in q.options.items() %}
+                    <div class="p-3 rounded-lg border text-sm flex items-center justify-between
+                        {% if key == q.correct_answer %}bg-green-500/15 border-green-500/40 text-green-200
+                        {% elif key == q.user_answer and not q.is_correct %}bg-red-500/15 border-red-500/40 text-red-200
+                        {% else %}bg-slate-900/40 border-slate-800 text-slate-400{% endif %}">
+                        
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold bg-slate-800">{{ key }}</span>
+                            <span>{{ val }}</span>
+                        </div>
+
+                        {% if key == q.correct_answer %}
+                            <span class="text-xs text-green-400 font-semibold">Correct Answer</span>
+                        {% elif key == q.user_answer and not q.is_correct %}
+                            <span class="text-xs text-red-400 font-semibold">Your Selection</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <!-- FILL IN THE BLANK DISPLAY -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 mb-4 text-sm space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Your Answer:</span>
+                        <span class="font-mono {% if q.is_correct %}text-green-400{% else %}text-red-400{% endif %} font-semibold">
+                            {{ q.user_answer or '(None)' }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between border-t border-slate-800 pt-2">
+                        <span class="text-slate-400">Correct Answer:</span>
+                        <span class="font-mono text-green-400 font-semibold">{{ q.correct_answer }}</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- EXPLANATION FROM PDF ONLY -->
+                {% if q.explanation %}
+                <div class="bg-indigo-950/40 border border-indigo-500/20 rounded-xl p-3.5 mt-2">
+                    <p class="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">📖 Explanation (From PDF Source)</p>
+                    <p class="text-xs text-slate-300 leading-relaxed">{{ q.explanation }}</p>
+                </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</body>
+</html>

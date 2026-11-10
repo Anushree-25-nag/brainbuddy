@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Evaluation - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between p-4 fixed left-0 top-0">
+        <div>
+            <div class="flex items-center space-x-3 px-3 py-4 mb-6 border-b border-slate-100">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white text-xl">🧠</div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-lg leading-tight">BrainBuddy</h1>
+                    <p class="text-xs text-slate-400">Study & Revision AI</p>
+                </div>
+            </div>
+
+            <nav class="space-y-1.5 text-sm font-medium">
+                <a href="/dashboard" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>📊</span><span>Dashboard</span>
+                </a>
+                <a href="/materials" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 font-semibold">
+                    <span>📚</span><span>Study Materials</span>
+                </a>
+                <a href="/upload" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>📤</span><span>Upload PDF</span>
+                </a>
+                <a href="/ask" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>💬</span><span>Ask BrainBuddy</span>
+                </a>
+                <a href="/revision" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>🎯</span><span>Revision Center</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="border-t border-slate-100 pt-4">
+            <a href="/profile" class="flex items-center space-x-3 px-3 py-2 mb-2 bg-slate-50 rounded-xl hover:bg-slate-100 transition">
+                <div class="w-9 h-9 bg-indigo-100 text-indigo-700 font-bold rounded-lg flex items-center justify-center text-sm">ST</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-slate-800 truncate">My Profile</p>
+                    <p class="text-xs text-slate-400 truncate">View stats</p>
+                </div>
+            </a>
+            <a href="/logout" class="w-full flex items-center space-x-3 px-3.5 py-2 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition">
+                <span>🚪</span><span>Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 ml-64 p-8 max-w-5xl space-y-8">
+        
+        <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                    Assessment Evaluation Completed
+                </span>
+                <h1 class="text-3xl font-extrabold text-slate-800 mt-2">Quiz Performance</h1>
+                <p class="text-sm text-slate-500 mt-1">Material: {{ material.title }}</p>
+            </div>
+
+            <div class="text-center p-6 bg-slate-50 rounded-2xl border border-slate-100 min-w-44">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Score</p>
+                <p class="text-4xl font-extrabold {% if score >= 75 %}text-emerald-600{% elif score >= 50 %}text-amber-500{% else %}text-rose-600{% endif %} mt-1">
+                    {{ score }}%
+                </p>
+                <p class="text-xs text-slate-500 mt-1 font-medium">{{ total_correct }} of {{ total_questions }} Correct</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-1">🎯 Topic-Wise Performance Analysis</h2>
+            <p class="text-xs text-slate-400 mb-6">Rule-based score evaluation: 0-49% (Needs Significant Revision), 50-74% (Needs Revision), 75-100% (Strong)</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {% for topic, data in topic_scores.items() %}
+                <div class="p-4 rounded-xl border {% if data.status == 'Strong' %}border-emerald-100 bg-emerald-50/30{% elif data.status == 'Needs Revision' %}border-amber-100 bg-amber-50/30{% else %}border-rose-100 bg-rose-50/30{% endif %} flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">{{ topic }}</h3>
+                        <span class="inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-md {% if data.status == 'Strong' %}bg-emerald-100 text-emerald-700{% elif data.status == 'Needs Revision' %}bg-amber-100 text-amber-700{% else %}bg-rose-100 text-rose-700{% endif %}">
+                            {{ data.status }}
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-slate-800">{{ data.score }}%</p>
+                        <p class="text-xs text-slate-400">{{ data.correct }}/{{ data.total }} Correct</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+            <h2 class="text-lg font-bold text-slate-800">📋 Detailed Question Review & Explanations</h2>
+
+            <div class="space-y-4">
+                {% for res in results %}
+                <div class="p-5 rounded-2xl border {% if res.is_correct %}border-emerald-100 bg-emerald-50/20{% else %}border-rose-100 bg-rose-50/20{% endif %} space-y-3">
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if res.is_correct %}bg-emerald-100 text-emerald-700{% else %}bg-rose-100 text-rose-700{% endif %}">
+                            {% if res.is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                        </span>
+                        <span class="text-xs text-slate-400">Topic: {{ res.topic }}</span>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-slate-800">{{ res.question }}</h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div class="p-2.5 bg-white rounded-xl border border-slate-100">
+                            <span class="text-slate-400 block font-medium">Your Selected Answer:</span>
+                            <span class="font-bold {% if res.is_correct %}text-emerald-600{% else %}text-rose-600{% endif %}">
+                                {{ res.selected_answer }}
+                            </span>
+                        </div>
+                        <div class="p-2.5 bg-white rounded-xl border border-slate-100">
+                            <span class="text-slate-400 block font-medium">Correct Answer:</span>
+                            <span class="font-bold text-emerald-600">{{ res.correct_answer }}</span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed">
+                        <strong class="text-slate-800">💡 Explanation:</strong> {{ res.explanation }}
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="pt-4 flex items-center justify-between border-t border-slate-100">
+                <a href="/materials" class="text-sm font-semibold text-slate-600 hover:text-slate-800">
+                    ← Back to Materials
+                </a>
+                <div class="space-x-3">
+                    <a href="/revision" class="bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold px-4 py-2.5 rounded-xl text-sm transition">
+                        🎯 Go to Revision Center
+                    </a>
+                    <a href="/quiz/{{ material_id }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm shadow transition">
+                        🔄 Retake Quiz
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>

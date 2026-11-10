@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Zone - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <script>(function(){try{var t=localStorage.getItem('brainbuddy-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="/static/theme.css">
+    <script src="/static/theme.js" defer></script>
+    <style>
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+        .progress-ring { transition: stroke-dashoffset 0.4s linear; }
+        .mode-btn.active { background-color: #2563eb !important; color: #fff !important; }
+        .bar-fill { transition: height 0.7s cubic-bezier(.4,.2,.2,1); }
+        .pulse-complete { animation: pulseGlow 1.2s ease-out; }
+        @keyframes pulseGlow {
+            0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+            50% { box-shadow: 0 0 0 20px rgba(34,197,94,0.25); }
+        }
+        .toast {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            padding: 12px 18px; border-radius: 10px;
+            background: #1e293b; color: #fff; border: 1px solid #334155;
+            box-shadow: 0 10px 25px rgba(0,0,0,.3);
+            transform: translateX(400px); transition: transform .35s ease;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-color: #22c55e; }
+        .toast.info    { border-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<!-- NAV -->
+<nav class="bg-slate-900 border-b border-slate-700 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="/dashboard" class="text-2xl font-bold text-blue-400">BrainBuddy</a>
+        <div class="flex items-center gap-5">
+            <span class="text-slate-300 hidden sm:inline">Hi, <span class="text-white font-medium">{{ user.name }}</span></span>
+            <a href="/dashboard" class="text-slate-300 hover:text-blue-400 font-medium">Dashboard</a>
+            <a href="/analytics" class="text-slate-300 hover:text-blue-400 font-medium">Analytics</a>
+            <a href="/logout" class="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded-lg font-medium transition">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- Heading -->
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-white mb-2">🎯 Focus Zone</h1>
+        <p class="text-slate-400">Deep work, tracked beautifully. Build your study streak one session at a time.</p>
+    </div>
+
+    <!-- Mode selector -->
+    <div class="flex justify-center mb-8">
+        <div class="inline-flex bg-slate-900 border border-slate-700 rounded-xl p-1 gap-1">
+            <button class="mode-btn active px-5 py-2 rounded-lg font-medium text-slate-200 transition" data-mode="pomodoro">Pomodoro</button>
+            <button class="mode-btn px-5 py-2 rounded-lg font-medium text-slate-300 transition" data-mode="stopwatch">Stopwatch</button>
+            <button class="mode-btn px-5 py-2 rounded-lg font-medium text-slate-300 transition" data-mode="custom">Custom</button>
+        </div>
+    </div>
+
+    <!-- Timer + sidebar -->
+    <div class="grid lg:grid-cols-3 gap-6 mb-8">
+
+        <!-- Timer card -->
+        <div id="timer-card" class="lg:col-span-2 bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-xl text-center">
+            <div id="phase-label" class="text-sm uppercase tracking-widest text-blue-400 font-semibold mb-2">Focus</div>
+
+            <div class="relative inline-flex items-center justify-center my-4">
+                <svg width="280" height="280" viewBox="0 0 280 280">
+                    <circle cx="140" cy="140" r="130" fill="none" stroke="currentColor" stroke-width="10" class="text-slate-800"/>
+                    <circle id="progress-ring" cx="140" cy="140" r="130" fill="none" stroke="currentColor" stroke-width="10"
+                            class="text-blue-500 progress-ring" transform="rotate(-90 140 140)"
+                            stroke-linecap="round" stroke-dasharray="816.8" stroke-dashoffset="816.8"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <div id="timer-display" class="text-6xl font-bold text-white tabular-nums">25:00</div>
+                    <div id="timer-status" class="text-xs text-slate-400 mt-2 uppercase tracking-wider">Ready</div>
+                </div>
+            </div>
+
+            <!-- Custom presets (hidden except in Custom mode) -->
+            <div id="custom-presets" class="hidden my-4">
+                <div class="flex justify-center gap-2 flex-wrap mb-3">
+                    <button class="preset-btn bg-slate-800 border border-slate-600 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-md text-sm transition" data-min="15">15 min</button>
+                    <button class="preset-btn bg-slate-800 border border-slate-600 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-md text-sm transition" data-min="30">30 min</button>
+                    <button class="preset-btn bg-slate-800 border border-slate-600 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-md text-sm transition" data-min="45">45 min</button>
+                    <button class="preset-btn bg-slate-800 border border-slate-600 hover:border-blue-500 text-slate-200 px-3 py-1.5 rounded-md text-sm transition" data-min="60">60 min</button>
+                </div>
+                <div class="flex justify-center items-center gap-2">
+                    <input id="custom-minutes" type="number" min="1" max="240" placeholder="Custom"
+                           class="w-32 px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-center">
+                    <span class="text-slate-400 text-sm">minutes (1–240)</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex justify-center gap-3 mt-6 flex-wrap">
+                <button id="btn-start"  class="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-2.5 rounded-lg transition shadow-lg shadow-green-900/30">▶ Start</button>
+                <button id="btn-pause"  class="hidden bg-yellow-600 hover:bg-yellow-500 text-white font-bold px-6 py-2.5 rounded-lg transition">⏸ Pause</button>
+                <button id="btn-resume" class="hidden bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-lg transition">▶ Resume</button>
+                <button id="btn-finish" class="hidden bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 py-2.5 rounded-lg transition">✓ Finish</button>
+                <button id="btn-reset"  class="hidden bg-slate-700 hover:bg-slate-600 text-white font-bold px-6 py-2.5 rounded-lg transition">↻ Reset</button>
+                <button id="btn-break-skip" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2.5 rounded-lg transition">Skip Break</button>
+            </div>
+        </div>
+
+        <!-- Sidebar: inputs + goal -->
+        <div class="space-y-6">
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                <h3 class="text-lg font-bold text-white mb-3">Session Details</h3>
+                <label class="block text-sm text-slate-300 mb-1">Study Topic</label>
+                <input id="topic-input" type="text" placeholder="e.g. Database Management"
+                       class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white mb-3 placeholder-slate-500">
+                <label class="block text-sm text-slate-300 mb-1">Link to Study Material (optional)</label>
+                <select id="material-select" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white">
+                    <option value="">— None —</option>
+                    {% for m in materials %}
+                    <option value="{{ m.id }}">{{ m.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                <h3 class="text-lg font-bold text-white mb-3">Daily Goal</h3>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-slate-400">Progress</span>
+                    <span id="goal-text" class="text-blue-400 font-semibold">0 / {{ goal_minutes }} min</span>
+                </div>
+                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden mb-2">
+                    <div id="goal-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700" style="width: 0%"></div>
+                </div>
+                <p id="goal-status" class="text-xs text-slate-400 mt-1">Start a session to build progress.</p>
+
+                <form id="goal-form" class="flex gap-2 mt-4">
+                    <select id="goal-preset" class="flex-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm">
+                        <option value="60">1 hour</option>
+                        <option value="120">2 hours</option>
+                        <option value="180">3 hours</option>
+                        <option value="240">4 hours</option>
+                        <option value="custom">Custom…</option>
+                    </select>
+                    <input id="goal-custom" type="number" min="15" max="1440" placeholder="min"
+                           class="hidden w-20 px-2 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm text-center">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-2 rounded-lg text-sm transition">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily stats cards -->
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-lg">
+            <p class="text-slate-400 text-sm">Today's Focus</p>
+            <p id="stat-today" class="text-3xl font-bold text-blue-400 mt-1">0h 0m</p>
+            <p id="stat-today-remaining" class="text-xs text-slate-500 mt-1"></p>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-lg">
+            <p class="text-slate-400 text-sm">Sessions Today</p>
+            <p id="stat-sessions" class="text-3xl font-bold text-indigo-400 mt-1">0</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-lg">
+            <p class="text-slate-400 text-sm">Avg Session</p>
+            <p id="stat-avg" class="text-3xl font-bold text-green-400 mt-1">0m</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-lg">
+            <p class="text-slate-400 text-sm">Week Total</p>
+            <p id="stat-week" class="text-3xl font-bold text-purple-400 mt-1">0h 0m</p>
+        </div>
+    </div>
+
+    <!-- Weekly chart -->
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl mb-8">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <h2 class="text-xl font-bold text-white">Weekly Activity</h2>
+            <span id="week-best" class="text-xs text-slate-400"></span>
+        </div>
+        <div id="week-chart" class="flex items-end justify-between gap-2 h-48">
+            <!-- bars injected via JS -->
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-xl font-bold text-white mb-4">Recent Sessions</h2>
+        <div id="history-container">
+            <p class="text-slate-400">Loading…</p>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+// ============================================================
+// BRAINBUDDY FOCUS ZONE — Frontend (timestamp-based, resilient)
+// ============================================================
+const CIRC = 816.8;
+let currentMode = 'pomodoro';
+let session = null;          // active session object from server
+let tickHandle = null;
+let breakState = null;       // { type:'short'|'long', started_at, duration_s }
+let notifPermissionAsked = false;
+let stats = { pomodoro_focus_today: 0, goal_minutes: {{ goal_minutes }} };
+
+// ---------- helpers ----------
+function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const h = Math.floor(sec/3600);
+    const m = Math.floor((sec%3600)/60);
+    const s = sec%60;
+    if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function fmtHM(sec) {
+    const h = Math.floor(sec/3600);
+    const m = Math.floor((sec%3600)/60);
+    return `${h}h ${m}m`;
+}
+function toast(msg, type='info') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 3200);
+}
+function updateRing(p) {
+    document.getElementById('progress-ring').style.strokeDashoffset = CIRC * (1 - Math.max(0, Math.min(1, p)));
+}
+function elapsedServer(sess) {
+    if (!sess) return 0;
+    let acc = sess.accumulated_seconds || 0;
+    if (sess.status === 'running' && sess.last_resumed_at) {
+        const started = new Date(sess.last_resumed_at).getTime();
+        acc += Math.max(0, (Date.now() - started) / 1000);
+    }
+    return acc;
+}
+
+// ---------- notifications ----------
+function maybeAskNotifs() {
+    if (!('Notification' in window)) return;
+    if (notifPermissionAsked) return;
+    if (Notification.permission === 'default') {
+        notifPermissionAsked = true;
+        Notification.requestPermission().catch(()=>{});
+    }
+}
+function notify(title, body) {
+    try {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body: body });
+        }
+    } catch(e) {}
+    toast(title + (body ? ' — ' + body : ''), 'success');
+}
+
+// ---------- rendering ----------
+function renderTimer() {
+    // Break mode (client-side)
+    if (breakState) {
+        const el = (Date.now() - breakState.started_at) / 1000;
+        const rem = Math.max(0, breakState.duration_s - el);
+        document.getElementById('timer-display').textContent = fmt(rem);
+        document.getElementById('phase-label').textContent = breakState.type === 'long' ? 'Long Break' : 'Short Break';
+        document.getElementById('timer-status').textContent = 'Break — relax';
+        updateRing(1 - (rem / breakState.duration_s));
+        if (rem <= 0) onBreakDone();
+        return;
+    }
+
+    if (!session) {
+        // Idle preview
+        let d = 25*60;
+        if (currentMode === 'stopwatch') d = 0;
+        if (currentMode === 'custom') d = getCustomMinutesPreview() * 60;
+        document.getElementById('timer-display').textContent = fmt(d);
+        document.getElementById('phase-label').textContent = currentMode === 'pomodoro' ? 'Focus' : (currentMode === 'stopwatch' ? 'Stopwatch' : 'Custom');
+        document.getElementById('timer-status').textContent = 'Ready';
+        updateRing(0);
+        return;
+    }
+
+    const el = elapsedServer(session);
+    if (session.timer_mode === 'stopwatch') {
+        document.getElementById('timer-display').textContent = fmt(el);
+        document.getElementById('phase-label').textContent = 'Stopwatch';
+        updateRing(0);
+    } else {
+        const rem = Math.max(0, session.planned_seconds - el);
+        document.getElementById('timer-display').textContent = fmt(rem);
+        document.getElementById('phase-label').textContent = session.timer_mode === 'pomodoro' ? 'Focus' : 'Custom';
+        const prog = session.planned_seconds > 0 ? Math.min(1, el / session.planned_seconds) : 0;
+        updateRing(prog);
+        if (rem <= 0 && session.status === 'running') {
+            onTimerComplete();
+        }
+    }
+    document.getElementById('timer-status').textContent = session.status.toUpperCase();
+}
+
+function getCustomMinutesPreview() {
+    const v = parseInt(document.getElementById('custom-minutes').value || '25', 10);
+    return (v>=1 && v<=240) ? v : 25;
+}
+
+function startTick() { if (!tickHandle) tickHandle = setInterval(renderTimer, 250); }
+function stopTick()  { if (tickHandle) { clearInterval(tickHandle); tickHandle = null; } }
+
+// ---------- UI state ----------
+function updateButtons() {
+    const show = (id, on) => document.getElementById(id).classList.toggle('hidden', !on);
+
+    if (breakState) {
+        show('btn-start', false); show('btn-pause', false); show('btn-resume', false);
+        show('btn-finish', false); show('btn-reset', false); show('btn-break-skip', true);
+        return;
+    }
+    show('btn-break-skip', false);
+    if (!session) {
+        show('btn-start', true); show('btn-pause', false); show('btn-resume', false);
+        show('btn-finish', false); show('btn-reset', false);
+        return;
+    }
+    if (session.status === 'running') {
+        show('btn-start', false);
+        show('btn-pause', true); show('btn-resume', false);
+        show('btn-finish', true); show('btn-reset', true);
+    } else if (session.status === 'paused') {
+        show('btn-start', false);
+        show('btn-pause', false); show('btn-resume', true);
+        show('btn-finish', true); show('btn-reset', true);
+    } else {
+        show('btn-start', true); show('btn-pause', false); show('btn-resume', false);
+        show('btn-finish', false); show('btn-reset', false);
+    }
+}
+
+function setMode(mode) {
+    if (session && session.status !== 'completed' && session.status !== 'abandoned') {
+        toast('Finish or reset the current session to change mode.', 'info');
+        return;
+    }
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    document.getElementById('custom-presets').classList.toggle('hidden', mode !== 'custom');
+    renderTimer();
+    updateButtons();
+}
+
+// ---------- API ----------
+async function api(url, method='GET', body=null) {
+    const opts = { method, headers: {'Content-Type':'application/json'} };
+    if (body !== null) opts.body = JSON.stringify(body);
+    const r = await fetch(url, opts);
+    if (!r.ok) {
+        let msg = 'Request failed';
+        try { const j = await r.json(); msg = j.detail || msg; } catch(e) {}
+        throw new Error(msg);
+    }
+    return r.json();
+}
+
+async function doStart() {
+    maybeAskNotifs();
+    const topic = document.getElementById('topic-input').value.trim();
+    const mid = document.getElementById('material-select').value || null;
+    let planned_minutes = 0;
+    if (currentMode === 'pomodoro') planned_minutes = 25;
+    else if (currentMode === 'custom') {
+        planned_minutes = parseInt(document.getElementById('custom-minutes').value, 10);
+        if (!planned_minutes || planned_minutes<1 || planned_minutes>240) {
+            toast('Enter 1–240 minutes for custom timer.', 'info');
+            return;
+        }
+    }
+    try {
+        const d = await api('/focus-zone/api/start', 'POST', {
+            mode: currentMode, topic, material_id: mid, planned_minutes
+        });
+        session = d.session;
+        updateButtons();
+        startTick();
+        toast('Session started. Stay focused!', 'success');
+    } catch (e) { toast(e.message, 'info'); }
+}
+
+async function doPause() {
+    if (!session) return;
+    try {
+        const d = await api(`/focus-zone/api/pause/${session.id}`, 'POST');
+        session = d.session;
+        updateButtons(); renderTimer();
+    } catch(e) { toast(e.message, 'info'); }
+}
+
+async function doResume() {
+    if (!session) return;
+    try {
+        const d = await api(`/focus-zone/api/resume/${session.id}`, 'POST');
+        session = d.session;
+        updateButtons(); renderTimer();
+    } catch(e) { toast(e.message, 'info'); }
+}
+
+async function doFinish() {
+    if (!session) return;
+    try {
+        const d = await api(`/focus-zone/api/complete/${session.id}`, 'POST');
+        const prevMode = session.timer_mode;
+        const focused = d.session.focused_seconds || 0;
+        session = null;
+        stopTick();
+        document.getElementById('timer-card').classList.add('pulse-complete');
+        setTimeout(() => document.getElementById('timer-card').classList.remove('pulse-complete'), 1400);
+        notify('Session complete', `${fmtHM(focused)} focused`);
+        await loadStats();
+        if (prevMode === 'pomodoro' && focused > 0) offerPomodoroBreak();
+        else { updateButtons(); renderTimer(); }
+    } catch(e) { toast(e.message, 'info'); }
+}
+
+async function doReset() {
+    if (!session) return;
+    if (!confirm('Reset this session? No focus time will be recorded.')) return;
+    try {
+        await api(`/focus-zone/api/abandon/${session.id}`, 'POST');
+        session = null;
+        stopTick();
+        updateButtons(); renderTimer();
+        toast('Session reset.', 'info');
+    } catch(e) { toast(e.message, 'info'); }
+}
+
+async function onTimerComplete() {
+    // Natural completion — server will cap to planned
+    if (!session || session._completing) return;
+    session._completing = true;
+    await doFinish();
+}
+
+// ---------- Pomodoro break (client-side only) ----------
+function offerPomodoroBreak() {
+    const nextLong = (stats.pomodoro_focus_today > 0 && stats.pomodoro_focus_today % 4 === 0);
+    const type = nextLong ? 'long' : 'short';
+    const dur = nextLong ? 15*60 : 5*60;
+    if (!confirm(`Focus done! Start a ${nextLong ? '15-minute long' : '5-minute short'} break now?`)) {
+        updateButtons(); renderTimer();
+        return;
+    }
+    breakState = { type, duration_s: dur, started_at: Date.now() };
+    updateButtons();
+    startTick();
+}
+
+function onBreakDone() {
+    breakState = null;
+    stopTick();
+    notify('Break over', 'Ready for another focus session?');
+    updateButtons(); renderTimer();
+}
+
+function doBreakSkip() {
+    if (!breakState) return;
+    onBreakDone();
+}
+
+// ---------- Stats ----------
+async function loadStats() {
+    const tz = new Date().getTimezoneOffset(); // JS convention
+    try {
+        const d = await api(`/focus-zone/api/stats?tz_offset=${tz}`);
+        stats = d;
+        renderStats(d);
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function renderStats(d) {
+    document.getElementById('stat-today').textContent = fmtHM(d.today_seconds);
+    document.getElementById('stat-sessions').textContent = d.today_sessions;
+    document.getElementById('stat-avg').textContent = Math.floor((d.avg_seconds||0)/60) + 'm';
+    document.getElementById('stat-week').textContent = fmtHM(d.week_total);
+
+    // Goal
+    const goalSec = (d.goal_minutes || 120) * 60;
+    const pct = Math.min(100, Math.round((d.today_seconds / goalSec) * 100));
+    document.getElementById('goal-bar').style.width = pct + '%';
+    document.getElementById('goal-text').textContent = `${Math.floor(d.today_seconds/60)} / ${d.goal_minutes} min`;
+    const remain = Math.max(0, goalSec - d.today_seconds);
+    document.getElementById('goal-status').textContent =
+        remain === 0 ? '🎉 Daily goal completed!' : `${fmtHM(remain)} remaining · ${pct}%`;
+    document.getElementById('stat-today-remaining').textContent =
+        remain === 0 ? 'Goal reached' : `${fmtHM(remain)} to goal`;
+
+    // Weekly bar chart
+    const chart = document.getElementById('week-chart');
+    chart.innerHTML = '';
+    const maxSec = Math.max(1, ...d.week_days.map(x => x.seconds), goalSec);
+    d.week_days.forEach(day => {
+        const h = Math.round((day.seconds / maxSec) * 100);
+        const col = document.createElement('div');
+        col.className = 'flex-1 flex flex-col items-center gap-1 min-w-0';
+        col.innerHTML = `
+            <div class="text-xs text-blue-400 font-semibold truncate">${day.seconds > 0 ? fmtHM(day.seconds) : '—'}</div>
+            <div class="w-full bg-slate-800 rounded-t relative" style="height: 140px;">
+                <div class="bar-fill absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-600 to-indigo-500 rounded-t" style="height: ${h}%;"></div>
+            </div>
+            <div class="text-xs text-slate-400">${day.date}</div>
+        `;
+        chart.appendChild(col);
+    });
+
+    if (d.best_day && d.best_day.seconds > 0) {
+        document.getElementById('week-best').textContent =
+            `Best day: ${d.best_day.date} (${fmtHM(d.best_day.seconds)}) · Avg: ${fmtHM(d.avg_daily)}`;
+    } else {
+        document.getElementById('week-best').textContent = 'No sessions this week yet.';
+    }
+
+    // History
+    const hc = document.getElementById('history-container');
+    if (!d.history.length) {
+        hc.innerHTML = '<p class="text-slate-400 text-center py-6">No sessions yet. Complete your first focus session!</p>';
+    } else {
+        let html = '<table class="w-full text-left text-sm"><thead class="bg-slate-800 text-slate-300">';
+        html += '<tr><th class="px-3 py-2">Date</th><th class="px-3 py-2">Topic</th><th class="px-3 py-2">Mode</th><th class="px-3 py-2">Focus</th><th class="px-3 py-2">Status</th></tr></thead><tbody>';
+        d.history.forEach(h => {
+            const dt = h.ended_at ? new Date(h.ended_at) : null;
+            const dstr = dt ? dt.toLocaleString() : '—';
+            const col = h.status === 'completed' ? 'text-green-400' : 'text-slate-500';
+            html += `<tr class="border-t border-slate-800">
+                <td class="px-3 py-2 text-slate-400">${dstr}</td>
+                <td class="px-3 py-2 text-white">${escapeHTML(h.topic)}</td>
+                <td class="px-3 py-2 text-slate-300 capitalize">${h.mode}</td>
+                <td class="px-3 py-2 text-blue-300">${fmtHM(h.focused_seconds)}</td>
+                <td class="px-3 py-2 ${col} capitalize">${h.status}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        hc.innerHTML = html;
+    }
+}
+
+function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+}
+
+// ---------- Goal form ----------
+document.getElementById('goal-preset').addEventListener('change', (e) => {
+    document.getElementById('goal-custom').classList.toggle('hidden', e.target.value !== 'custom');
+});
+document.getElementById('goal-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const sel = document.getElementById('goal-preset').value;
+    let min = parseInt(sel === 'custom' ? document.getElementById('goal-custom').value : sel, 10);
+    if (!min || min < 15 || min > 1440) { toast('Goal must be 15–1440 minutes', 'info'); return; }
+    try {
+        await api('/focus-zone/api/goal', 'POST', { minutes: min });
+        toast('Daily goal updated', 'success');
+        await loadStats();
+    } catch(e) { toast(e.message, 'info'); }
+});
+
+// ---------- Custom preset buttons ----------
+document.querySelectorAll('.preset-btn').forEach(b => {
+    b.addEventListener('click', () => {
+        document.getElementById('custom-minutes').value = b.dataset.min;
+        renderTimer();
+    });
+});
+document.getElementById('custom-minutes').addEventListener('input', renderTimer);
+
+// ---------- Mode buttons ----------
+document.querySelectorAll('.mode-btn').forEach(b => {
+    b.addEventListener('click', () => setMode(b.dataset.mode));
+});
+
+// ---------- Control buttons ----------
+document.getElementById('btn-start').addEventListener('click', doStart);
+document.getElementById('btn-pause').addEventListener('click', doPause);
+document.getElementById('btn-resume').addEventListener('click', doResume);
+document.getElementById('btn-finish').addEventListener('click', doFinish);
+document.getElementById('btn-reset').addEventListener('click', doReset);
+document.getElementById('btn-break-skip').addEventListener('click', doBreakSkip);
+
+// ---------- Resume active session on load ----------
+(async function init() {
+    try {
+        const d = await api('/focus-zone/api/active');
+        if (d.session) {
+            session = d.session;
+            currentMode = session.mode;
+            setMode(currentMode);
+            startTick();
+        }
+    } catch(e) { /* not logged in — shouldn't happen since page requires login */ }
+    await loadStats();
+    updateButtons();
+    renderTimer();
+})();
+
+// Periodic stats refresh
+setInterval(loadStats, 30000);
+
+// Resync on tab visibility change
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) renderTimer();
+});
+</script>
+</body>
+</html>

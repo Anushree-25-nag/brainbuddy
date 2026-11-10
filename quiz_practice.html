@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Mode - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: rgba(51, 65, 85, 0.8);
+            border: 1px solid rgba(100, 116, 139, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.9);
+        }
+        .practice-opt {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .practice-opt:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+        .opt-correct {
+            background: rgba(34, 197, 94, 0.2) !important;
+            border-color: #22c55e !important;
+            color: #4ade80 !important;
+        }
+        .opt-wrong {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: #ef4444 !important;
+            color: #f87171 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen">
+    <!-- TOP NAVIGATION -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/dashboard" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">🧠 BrainBuddy</a>
+                <span class="text-slate-500 text-sm hidden sm:inline">/ Practice Mode</span>
+            </div>
+            <a href="/quiz/{{ material.id }}" class="text-xs text-slate-400 hover:text-white transition">← Exit Practice</a>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 pt-24 pb-12">
+        <!-- PAGE HEADER -->
+        <div class="glass-card rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">Untimed Practice</span>
+                <h1 class="text-2xl font-bold text-white mt-0.5">{{ material.filename }}</h1>
+                <p class="text-xs text-slate-400 mt-1">Mode: <span class="text-indigo-300 font-medium">{{ mode }}</span> ({{ questions|length }} Questions)</p>
+            </div>
+            <a href="/quiz/{{ material.id }}" class="btn-secondary text-slate-300 px-4 py-2 rounded-lg text-xs font-medium">
+                🔄 Switch to Timed Quiz
+            </a>
+        </div>
+
+        {% if questions %}
+        <!-- QUESTIONS LIST -->
+        <div class="space-y-6">
+            {% for q in questions %}
+            <div class="glass-card rounded-2xl p-6" id="card-{{ q.id }}">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400">#{{ loop.index }}</span>
+                        {% if q.topic %}<span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">{{ q.topic }}</span>{% endif %}
+                    </div>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 capitalize">
+                        {{ q.question_type }}
+                    </span>
+                </div>
+
+                <h3 class="text-base font-semibold text-white mb-5">{{ q.question_text }}</h3>
+
+                <!-- OPTIONS FOR MCQ / TRUE_FALSE -->
+                {% if q.question_type in ['mcq', 'true_false'] %}
+                <div class="space-y-3 mb-4" id="options-{{ q.id }}">
+                    {% for key, val in q.options.items() %}
+                    <button type="button"
+                            onclick="checkPracticeAnswer({{ q.id }}, '{{ key }}', '{{ q.correct_answer }}')"
+                            id="opt-{{ q.id }}-{{ key }}"
+                            class="practice-opt w-full text-left p-3.5 rounded-lg border border-slate-700/60 bg-slate-800/40 flex items-center justify-between text-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-700/60 text-xs font-bold">{{ key }}</span>
+                            <span>{{ val }}</span>
+                        </div>
+                        <span class="status-icon text-xs font-semibold"></span>
+                    </button>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <!-- FILL IN THE BLANK INPUT -->
+                <div class="mb-4 space-y-3">
+                    <div class="flex gap-2">
+                        <input type="text"
+                               id="fill-input-{{ q.id }}"
+                               class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+                               placeholder="Type your answer...">
+                        <button type="button"
+                                onclick="checkFillAnswer({{ q.id }}, '{{ q.correct_answer }}')"
+                                class="btn-primary text-white text-xs font-medium px-5 py-2.5 rounded-lg">
+                            Check
+                        </button>
+                    </div>
+                    <div id="fill-feedback-{{ q.id }}" class="hidden text-xs font-medium p-3 rounded-lg"></div>
+                </div>
+                {% endif %}
+
+                <!-- EXPLANATION BOX (Revealed on answer click) -->
+                <div id="exp-{{ q.id }}" class="hidden bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4 mt-4 text-xs text-slate-300">
+                    <p class="font-semibold text-indigo-400 uppercase tracking-wider mb-1">📖 Source Explanation</p>
+                    <p class="leading-relaxed">{{ q.explanation or "Correct Answer: " ~ q.correct_answer }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- EMPTY STATE -->
+        <div class="glass-card rounded-2xl p-12 text-center">
+            <span class="text-4xl block mb-3">🎉</span>
+            <h2 class="text-xl font-bold text-white mb-2">No Questions Found</h2>
+            <p class="text-slate-400 text-sm mb-6">There are no questions available for this practice filter.</p>
+            <a href="/quiz/{{ material.id }}" class="btn-primary text-white font-medium px-6 py-2.5 rounded-lg text-sm inline-block">
+                ← Back to Quiz Dashboard
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function checkPracticeAnswer(qid, selected, correct) {
+            const container = document.getElementById('options-' + qid);
+            if (!container) return;
+
+            const buttons = container.querySelectorAll('.practice-opt');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('practice-opt');
+            });
+
+            const selBtn = document.getElementById('opt-' + qid + '-' + selected);
+            const correctBtn = document.getElementById('opt-' + qid + '-' + correct);
+
+            if (selected.toLowerCase() === correct.toLowerCase()) {
+                if (selBtn) {
+                    selBtn.classList.add('opt-correct');
+                    selBtn.querySelector('.status-icon').textContent = '✅ Correct';
+                }
+            } else {
+                if (selBtn) {
+                    selBtn.classList.add('opt-wrong');
+                    selBtn.querySelector('.status-icon').textContent = '❌ Incorrect';
+                }
+                if (correctBtn) {
+                    correctBtn.classList.add('opt-correct');
+                    correctBtn.querySelector('.status-icon').textContent = '✓ Correct Answer';
+                }
+            }
+
+            const exp = document.getElementById('exp-' + qid);
+            if (exp) exp.classList.remove('hidden');
+        }
+
+        function checkFillAnswer(qid, correct) {
+            const input = document.getElementById('fill-input-' + qid);
+            const feedback = document.getElementById('fill-feedback-' + qid);
+            if (!input || !feedback) return;
+
+            const userVal = input.value.trim().toLowerCase();
+            const correctVal = correct.trim().toLowerCase();
+
+            feedback.classList.remove('hidden', 'bg-green-500/20', 'text-green-300', 'bg-red-500/20', 'text-red-300');
+
+            if (userVal === correctVal) {
+                feedback.classList.add('bg-green-500/20', 'text-green-300', 'border', 'border-green-500/30');
+                feedback.textContent = '✅ Correct Answer!';
+            } else {
+                feedback.classList.add('bg-red-500/20', 'text-red-300', 'border', 'border-red-500/30');
+                feedback.textContent = `❌ Incorrect. Correct Answer: "${correct}"`;
+            }
+
+            const exp = document.getElementById('exp-' + qid);
+            if (exp) exp.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

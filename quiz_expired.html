@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Expired - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: rgba(51, 65, 85, 0.8);
+            border: 1px solid rgba(100, 116, 139, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.9);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col justify-between">
+    <!-- TOP NAVIGATION -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/dashboard" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">🧠 BrainBuddy</a>
+                <span class="text-slate-500 text-sm hidden sm:inline">{{ material.filename }}</span>
+            </div>
+            <a href="/quiz/{{ material.id }}" class="text-xs text-slate-400 hover:text-white transition">← Back to Quiz Landing</a>
+        </div>
+    </div>
+
+    <!-- EXPIRED CONTENT -->
+    <div class="flex-1 flex items-center justify-center px-4 pt-24 pb-12">
+        <div class="glass-card rounded-2xl p-8 max-w-lg w-full text-center border-t-4 border-red-500">
+            <div class="w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                ⏰
+            </div>
+            
+            <h1 class="text-3xl font-bold text-red-400 mb-2">Time's Up!</h1>
+            <p class="text-slate-300 text-base mb-6 leading-relaxed">
+                Your quiz time has expired. Please restart the quiz to try again.
+            </p>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 mb-8 text-left space-y-2 text-xs text-slate-400">
+                <div class="flex justify-between">
+                    <span>Study Material:</span>
+                    <span class="text-slate-200 font-medium truncate max-w-[200px]">{{ material.filename }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Difficulty:</span>
+                    <span class="text-slate-200 font-medium capitalize">{{ attempt.difficulty }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Allowed Duration:</span>
+                    <span class="text-slate-200 font-medium">2 Minutes (120s)</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Status:</span>
+                    <span class="text-red-400 font-medium uppercase tracking-wider">Expired</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="/quiz/{{ material.id }}" class="btn-primary text-white font-medium px-6 py-3 rounded-lg text-sm flex-1 flex items-center justify-center gap-2">
+                    🔄 Restart Quiz
+                </a>
+                <a href="/dashboard" class="btn-secondary text-slate-300 font-medium px-6 py-3 rounded-lg text-sm flex-1 flex items-center justify-center">
+                    🏠 Return Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="text-center py-4 text-xs text-slate-600 border-t border-slate-900">
+        BrainBuddy Academic Platform • Strict Examination Engine
+    </div>
+</body>
+</html>

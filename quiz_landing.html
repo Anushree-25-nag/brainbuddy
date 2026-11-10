@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Dashboard - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: rgba(51, 65, 85, 0.8);
+            border: 1px solid rgba(100, 116, 139, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.9);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen">
+    <!-- TOP NAVIGATION -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/dashboard" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">🧠 BrainBuddy</a>
+                <span class="text-slate-500 text-sm hidden sm:inline">/ Quiz Module</span>
+            </div>
+            <a href="/dashboard" class="text-xs text-slate-400 hover:text-white transition">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 pt-24 pb-12">
+        <!-- HEADER SECTION -->
+        <div class="glass-card rounded-2xl p-6 sm:p-8 mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">Study Material</span>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white mt-1">{{ material.filename }}</h1>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700/60 rounded-xl px-5 py-3 text-center">
+                    <p class="text-xs text-slate-400 uppercase font-medium">Question Bank</p>
+                    <p class="text-2xl font-bold text-indigo-400 mt-0.5">{{ bank_count }} Questions</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- LEFT COLUMN: QUIZ ACTIONS -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- START TIMED QUIZ CARD -->
+                <div class="glass-card rounded-2xl p-6 border-l-4 border-indigo-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">⏱️</span>
+                            <div>
+                                <h2 class="text-xl font-bold text-white">Start Timed Quiz</h2>
+                                <p class="text-xs text-slate-400">10 Questions • Strictly 2-Minute (120s) Limit</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Official Mode</span>
+                    </div>
+                    
+                    <p class="text-slate-300 text-sm mb-6">
+                        Test your knowledge under standard examination conditions. Server-enforced countdown timer auto-submits upon expiry.
+                    </p>
+
+                    {% if bank_count >= 10 %}
+                    <form action="/quiz/{{ material.id }}/start" method="post" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                        <div class="flex-1">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Select Difficulty Level</label>
+                            <select name="difficulty" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                <option value="easy">Easy (Fundamentals & Direct Facts)</option>
+                                <option value="medium" selected>Medium (Application & Standard Concepts)</option>
+                                <option value="hard">Hard (Deep Analysis & Critical Questions)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary text-white font-medium px-6 py-2.5 rounded-lg text-sm sm:self-end flex items-center justify-center gap-2">
+                            🚀 Start Timed Quiz
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-amber-300 text-sm">
+                        ⚠️ You need at least 10 questions in your bank to start a timed quiz. Generate questions using the tool below.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- PRACTICE MODE & QUESTION GENERATOR GRID -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    
+                    <!-- PRACTICE MODE CARD -->
+                    <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="text-2xl mb-2">🎯</div>
+                            <h3 class="text-lg font-bold text-white mb-1">Practice Mode</h3>
+                            <p class="text-xs text-slate-400 mb-4">Untimed mode for relaxed study, instant feedback, and thorough revision.</p>
+                        </div>
+                        <a href="/quiz/{{ material.id }}/practice" class="btn-secondary text-white text-center font-medium px-4 py-2.5 rounded-lg text-sm block">
+                            📖 Open Practice Mode
+                        </a>
+                    </div>
+
+                    <!-- GENERATE MORE QUESTIONS CARD -->
+                    <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="text-2xl mb-2">🤖</div>
+                            <h3 class="text-lg font-bold text-white mb-1">Expand Question Bank</h3>
+                            <p class="text-xs text-slate-400 mb-3">Extract unique MCQs, True/False, and Fill-in-Blanks directly from PDF text chunks.</p>
+                        </div>
+                        <form action="/quiz/{{ material.id }}/generate" method="post" class="space-y-3" onsubmit="showGeneratingState(this)">
+                            <select name="difficulty" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                                <option value="easy">Generate Easy Questions</option>
+                                <option value="medium" selected>Generate Medium Questions</option>
+                                <option value="hard">Generate Hard Questions</option>
+                            </select>
+                            <button type="submit" id="gen-btn" class="w-full btn-secondary text-indigo-300 hover:text-white font-medium px-4 py-2.5 rounded-lg text-sm flex items-center justify-center gap-2">
+                                ➕ Extract Questions
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: QUIZ HISTORY -->
+            <div class="lg:col-span-1">
+                <div class="glass-card rounded-2xl p-6 sticky top-24">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        📜 Quiz History
+                    </h3>
+
+                    {% if attempts %}
+                    <div class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                        {% for attempt in attempts %}
+                        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold capitalize px-2 py-0.5 rounded
+                                        {% if attempt.difficulty == 'easy' %}bg-green-500/20 text-green-300
+                                        {% elif attempt.difficulty == 'medium' %}bg-amber-500/20 text-amber-300
+                                        {% else %}bg-red-500/20 text-red-300{% endif %}">
+                                        {{ attempt.difficulty }}
+                                    </span>
+                                    <span class="text-xs text-slate-500">{{ attempt.created_at.strftime('%b %d, %H:%M') }}</span>
+                                </div>
+                                
+                                <div class="mt-1.5 flex items-center gap-2 text-sm">
+                                    {% if attempt.status == 'completed' %}
+                                        <span class="font-bold text-green-400">{{ attempt.score }}/{{ attempt.total_questions }}</span>
+                                        <span class="text-slate-400 text-xs">({{ "%.0f"|format(attempt.percentage) }}%)</span>
+                                    {% else %}
+                                        <span class="text-red-400 text-xs font-semibold flex items-center gap-1">⏰ Time Expired</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div>
+                                {% if attempt.status == 'completed' %}
+                                <a href="/quiz/{{ material.id }}/result/{{ attempt.id }}" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium underline">
+                                    View Result
+                                </a>
+                                {% else %}
+                                <span class="text-xs text-slate-600">Expired</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8 text-slate-500">
+                        <span class="text-3xl block mb-2">📋</span>
+                        <p class="text-sm">No attempts yet.</p>
+                        <p class="text-xs mt-1">Start a timed quiz to record your progress.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function showGeneratingState(form) {
+            const btn = document.getElementById('gen-btn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Extracting Questions...';
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    </script>
+</body>
+</html>

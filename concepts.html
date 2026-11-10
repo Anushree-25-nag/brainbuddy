@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Concepts - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, padding 0.35s ease;
+        }
+        .accordion-body.open {
+            max-height: 800px;
+        }
+        .chevron {
+            transition: transform 0.3s ease;
+        }
+        .chevron.rotated {
+            transform: rotate(180deg);
+        }
+    </style>
+    <!-- BrainBuddy Theme Support -->
+    <script>(function(){try{var t=localStorage.getItem('brainbuddy-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="/static/theme.css">
+    <script src="/static/theme.js" defer></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 border-b border-slate-700">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/dashboard" class="text-blue-400 font-bold text-xl">BrainBuddy</a>
+            <a href="/dashboard" class="text-slate-300 hover:text-white text-sm">← Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-5xl mx-auto px-4 py-8">
+
+        <!-- Page Header -->
+        <h1 class="text-3xl font-bold text-white mb-2 tracking-wide">
+            Core Academic Concepts
+        </h1>
+        <p class="text-slate-400 mb-8">
+            {{ material.title }}
+            <span class="mx-2 text-slate-600">·</span>
+            <span class="text-indigo-400 font-medium">{{ concepts|length }} Topics Extracted</span>
+        </p>
+
+        <!-- Interactive Topic Cards -->
+        <div class="space-y-4 pb-12">
+            {% if concepts %}
+                {% for c in concepts %}
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-lg hover:border-blue-600/60 transition-colors duration-200">
+
+                    <!-- Clickable Header -->
+                    <button
+                        type="button"
+                        onclick="toggleConcept({{ loop.index0 }})"
+                        class="w-full px-5 py-4 flex justify-between items-center text-left focus:outline-none bg-slate-900 hover:bg-slate-800/80 transition-colors"
+                    >
+                        <div class="flex items-center gap-3">
+                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/20 text-blue-400 text-sm font-bold flex items-center justify-center">
+                                {{ loop.index }}
+                            </span>
+                            <h3 class="text-lg font-semibold text-blue-400">
+                                {{ c.term }}
+                            </h3>
+                        </div>
+                        <svg id="chevron-{{ loop.index0 }}" class="chevron w-5 h-5 text-slate-400 flex-shrink-0 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Expandable Body -->
+                    <div id="body-{{ loop.index0 }}" class="accordion-body border-t border-slate-800">
+                        <div class="px-5 py-5">
+
+                            <!-- Topic Title again for clarity -->
+                            <h4 class="text-xl font-bold text-indigo-400 mb-3">
+                                {{ c.term }}
+                            </h4>
+
+                            <!-- Full Explanation -->
+                            <div class="mb-5">
+                                <p class="text-slate-200 leading-relaxed text-base">
+                                    {% if c.explanation %}
+                                        {{ c.explanation }}
+                                    {% else %}
+                                        {{ c.definition }}
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <!-- Key Points (if available) -->
+                            {% if c.key_points and c.key_points|length > 0 %}
+                            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                                <h5 class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-3">
+                                    Key Points
+                                </h5>
+                                <ol class="list-decimal list-inside space-y-2 text-slate-300 text-sm">
+                                    {% for point in c.key_points %}
+                                    <li class="leading-relaxed pl-1">{{ point }}</li>
+                                    {% endfor %}
+                                </ol>
+                            </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl p-10 text-center text-slate-400">
+                    <p class="text-lg mb-2">No concepts extracted.</p>
+                    <p class="text-sm">Try re-uploading a clear, text-based academic PDF.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Navigation Footer -->
+        <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-800">
+            <a href="/summary/{{ material.id }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm transition">Summary</a>
+            <a href="/flashcards/{{ material.id }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm transition">Flashcards</a>
+            <a href="/quiz/{{ material.id }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm transition">Quiz</a>
+            <a href="/ask/{{ material.id }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm transition">Ask BusyAI</a>
+            <a href="/revision/{{ material.id }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm transition">Revision</a>
+            <a href="/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition ml-auto">Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Accordion Script -->
+    <script>
+        function toggleConcept(index) {
+            const body = document.getElementById('body-' + index);
+            const chevron = document.getElementById('chevron-' + index);
+
+            if (body.classList.contains('open')) {
+                body.classList.remove('open');
+                chevron.classList.remove('rotated');
+            } else {
+                body.classList.add('open');
+                chevron.classList.add('rotated');
+            }
+        }
+    </script>
+
+</body>
+</html>

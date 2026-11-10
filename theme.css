@@ -1,0 +1,271 @@
+/* ============================================================
+   BrainBuddy — Light/Dark Theme Overrides
+   Dark mode is the DEFAULT. Light mode activates via [data-theme="light"]
+   ============================================================ */
+
+/* Smooth transition when switching themes */
+html, body, * {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+/* ===== LIGHT MODE OVERRIDES ===== */
+html[data-theme="light"] body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+/* Common dark Tailwind utility overrides when in light mode */
+html[data-theme="light"] .bg-slate-900,
+html[data-theme="light"] .bg-slate-950,
+html[data-theme="light"] .bg-gray-900,
+html[data-theme="light"] .bg-gray-950,
+html[data-theme="light"] .bg-neutral-900,
+html[data-theme="light"] .bg-neutral-950,
+html[data-theme="light"] .bg-black {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+html[data-theme="light"] .bg-slate-800,
+html[data-theme="light"] .bg-slate-700,
+html[data-theme="light"] .bg-gray-800,
+html[data-theme="light"] .bg-gray-700,
+html[data-theme="light"] .bg-neutral-800 {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0;
+}
+
+/* Cards & panels */
+html[data-theme="light"] .card,
+html[data-theme="light"] [class*="rounded"][class*="bg-slate"],
+html[data-theme="light"] [class*="rounded"][class*="bg-gray"],
+html[data-theme="light"] [class*="rounded"][class*="bg-neutral"] {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Text colors */
+html[data-theme="light"] .text-white,
+html[data-theme="light"] .text-slate-100,
+html[data-theme="light"] .text-slate-200,
+html[data-theme="light"] .text-gray-100,
+html[data-theme="light"] .text-gray-200,
+html[data-theme="light"] .text-neutral-100 {
+  color: #0F172A !important;
+}
+
+html[data-theme="light"] .text-slate-300,
+html[data-theme="light"] .text-slate-400,
+html[data-theme="light"] .text-gray-300,
+html[data-theme="light"] .text-gray-400,
+html[data-theme="light"] .text-neutral-300,
+html[data-theme="light"] .text-neutral-400 {
+  color: #475569 !important;
+}
+
+html[data-theme="light"] .text-slate-500,
+html[data-theme="light"] .text-gray-500 {
+  color: #64748B !important;
+}
+
+/* Preserve accent colors (blue, purple, green, red) in light mode but adjust tones */
+html[data-theme="light"] .text-blue-400,
+html[data-theme="light"] .text-blue-300 {
+  color: #2563EB !important;
+}
+
+html[data-theme="light"] .text-purple-400,
+html[data-theme="light"] .text-purple-300 {
+  color: #7C3AED !important;
+}
+
+html[data-theme="light"] .text-green-400,
+html[data-theme="light"] .text-green-300 {
+  color: #059669 !important;
+}
+
+html[data-theme="light"] .text-red-400,
+html[data-theme="light"] .text-red-300 {
+  color: #DC2626 !important;
+}
+
+html[data-theme="light"] .text-yellow-400,
+html[data-theme="light"] .text-yellow-300 {
+  color: #CA8A04 !important;
+}
+
+/* Borders */
+html[data-theme="light"] [class*="border-slate"],
+html[data-theme="light"] [class*="border-gray"],
+html[data-theme="light"] [class*="border-neutral"] {
+  border-color: #E2E8F0 !important;
+}
+
+/* Inputs, Textareas, Selects */
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+html[data-theme="light"] input:focus,
+html[data-theme="light"] textarea:focus,
+html[data-theme="light"] select:focus {
+  border-color: #2563EB !important;
+  outline: 2px solid rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Tables */
+html[data-theme="light"] table {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+html[data-theme="light"] thead,
+html[data-theme="light"] th {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+html[data-theme="light"] td,
+html[data-theme="light"] tr {
+  border-color: #E2E8F0 !important;
+}
+
+html[data-theme="light"] tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+/* Buttons — keep primary blue, but adapt dark buttons */
+html[data-theme="light"] button.bg-slate-700,
+html[data-theme="light"] button.bg-slate-800,
+html[data-theme="light"] button.bg-gray-700,
+html[data-theme="light"] button.bg-gray-800 {
+  background-color: #2563EB !important;
+  color: #FFFFFF !important;
+}
+
+html[data-theme="light"] a.bg-slate-700,
+html[data-theme="light"] a.bg-slate-800 {
+  background-color: #2563EB !important;
+  color: #FFFFFF !important;
+}
+
+/* Navigation bar */
+html[data-theme="light"] nav {
+  background-color: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] nav a,
+html[data-theme="light"] nav span {
+  color: #0F172A !important;
+}
+
+html[data-theme="light"] nav a:hover {
+  color: #2563EB !important;
+}
+
+/* Modal / dropdown / alert overrides */
+html[data-theme="light"] .modal,
+html[data-theme="light"] .dropdown,
+html[data-theme="light"] .alert {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+}
+
+/* Code blocks / pre */
+html[data-theme="light"] pre,
+html[data-theme="light"] code {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+}
+
+/* Flashcard 3D front/back */
+html[data-theme="light"] .flashcard,
+html[data-theme="light"] .flashcard-front,
+html[data-theme="light"] .flashcard-back {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+}
+
+/* Status badges */
+html[data-theme="light"] .badge-strong,
+html[data-theme="light"] .bg-green-900 {
+  background-color: #D1FAE5 !important;
+  color: #065F46 !important;
+}
+
+html[data-theme="light"] .badge-weak,
+html[data-theme="light"] .bg-red-900 {
+  background-color: #FEE2E2 !important;
+  color: #991B1B !important;
+}
+
+html[data-theme="light"] .badge-revision,
+html[data-theme="light"] .bg-yellow-900 {
+  background-color: #FEF3C7 !important;
+  color: #92400E !important;
+}
+
+/* ===== THEME TOGGLE BUTTON STYLES (both modes) ===== */
+#theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background-color: transparent;
+  cursor: pointer;
+  margin: 0 8px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+#theme-toggle-btn:hover {
+  background-color: rgba(148, 163, 184, 0.15);
+  transform: scale(1.05);
+}
+
+html[data-theme="light"] #theme-toggle-btn {
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+html:not([data-theme="light"]) #theme-toggle-btn {
+  color: #F1F5F9;
+}
+
+#theme-toggle-btn .icon-sun { display: none; }
+#theme-toggle-btn .icon-moon { display: inline; }
+
+html[data-theme="light"] #theme-toggle-btn .icon-sun { display: inline; }
+html[data-theme="light"] #theme-toggle-btn .icon-moon { display: none; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  #theme-toggle-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+}

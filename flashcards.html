@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Flashcards - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+
+        .flashcard {
+            width: 100%;
+            max-width: 520px;
+            height: 320px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .flashcard-front {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+        }
+
+        .flashcard-back {
+            background: linear-gradient(145deg, #1e3a5f, #0f172a);
+            transform: rotateY(180deg);
+        }
+
+        .card-glow:hover {
+            filter: drop-shadow(0 0 18px rgba(59, 130, 246, 0.25));
+        }
+    </style>
+    <!-- BrainBuddy Theme Support -->
+    <script>(function(){try{var t=localStorage.getItem('brainbuddy-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="/static/theme.css">
+    <script src="/static/theme.js" defer></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 border-b border-slate-700">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/dashboard" class="text-blue-400 font-bold text-xl">BrainBuddy</a>
+            <a href="/dashboard" class="text-slate-300 hover:text-white">← Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto px-4 py-10">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">3D Flashcards</h1>
+            <p class="text-slate-400">{{ material.title }}</p>
+            <p class="text-slate-500 text-sm mt-2">Click the card to flip · Use arrows to navigate</p>
+        </div>
+
+        {% if flashcards and flashcards|length > 0 %}
+
+        <!-- Progress -->
+        <div class="flex justify-center mb-6">
+            <div class="bg-slate-900 border border-slate-700 rounded-full px-4 py-1.5 text-sm text-slate-300">
+                Card <span id="currentIndex" class="text-blue-400 font-semibold">1</span>
+                /
+                <span id="totalCards">{{ flashcards|length }}</span>
+            </div>
+        </div>
+
+        <!-- 3D Card Stage -->
+        <div class="flex justify-center mb-8">
+            <div class="perspective-1000 w-full flex justify-center card-glow">
+                <div id="flashcard" class="flashcard" onclick="flipCard()">
+                    <!-- FRONT -->
+                    <div class="flashcard-face flashcard-front">
+                        <span class="text-xs uppercase tracking-widest text-yellow-400 font-semibold mb-4">Question</span>
+                        <p id="cardQuestion" class="text-xl md:text-2xl font-semibold text-white leading-relaxed px-2">
+                            {{ flashcards[0].question }}
+                        </p>
+                        <p class="text-slate-500 text-sm mt-8">Tap to reveal answer</p>
+                    </div>
+
+                    <!-- BACK -->
+                    <div class="flashcard-face flashcard-back">
+                        <span class="text-xs uppercase tracking-widest text-green-400 font-semibold mb-4">Answer</span>
+                        <p id="cardAnswer" class="text-lg md:text-xl text-slate-100 leading-relaxed px-2">
+                            {{ flashcards[0].answer }}
+                        </p>
+                        <p class="text-slate-500 text-sm mt-8">Tap to see question</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex justify-center items-center gap-4">
+            <button onclick="prevCard()"
+                class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-5 py-2.5 rounded-xl font-medium transition">
+                ← Prev
+            </button>
+
+            <button onclick="flipCard()"
+                class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-semibold transition shadow-lg shadow-blue-900/30">
+                Flip Card
+            </button>
+
+            <button onclick="nextCard()"
+                class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white px-5 py-2.5 rounded-xl font-medium transition">
+                Next →
+            </button>
+        </div>
+
+        <!-- Thumbnail strip -->
+        <div class="mt-10 flex flex-wrap justify-center gap-2">
+            {% for card in flashcards %}
+            <button onclick="goToCard({{ loop.index0 }})"
+                id="dot-{{ loop.index0 }}"
+                class="dot w-3 h-3 rounded-full transition {{ 'bg-blue-500' if loop.index0 == 0 else 'bg-slate-600 hover:bg-slate-500' }}">
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Pass cards data to JS safely -->
+        <script>
+            const cards = [
+                {% for card in flashcards %}
+                {
+                    question: {{ card.question|tojson }},
+                    answer: {{ card.answer|tojson }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            let index = 0;
+            const cardEl = document.getElementById('flashcard');
+            const qEl = document.getElementById('cardQuestion');
+            const aEl = document.getElementById('cardAnswer');
+            const idxEl = document.getElementById('currentIndex');
+
+            function updateCard() {
+                // reset flip when changing card
+                cardEl.classList.remove('flipped');
+
+                qEl.textContent = cards[index].question;
+                aEl.textContent = cards[index].answer;
+                idxEl.textContent = index + 1;
+
+                // update dots
+                document.querySelectorAll('.dot').forEach((dot, i) => {
+                    if (i === index) {
+                        dot.className = 'dot w-3 h-3 rounded-full transition bg-blue-500';
+                    } else {
+                        dot.className = 'dot w-3 h-3 rounded-full transition bg-slate-600 hover:bg-slate-500';
+                    }
+                });
+            }
+
+            function flipCard() {
+                cardEl.classList.toggle('flipped');
+            }
+
+            function nextCard() {
+                index = (index + 1) % cards.length;
+                updateCard();
+            }
+
+            function prevCard() {
+                index = (index - 1 + cards.length) % cards.length;
+                updateCard();
+            }
+
+            function goToCard(i) {
+                index = i;
+                updateCard();
+            }
+
+            // Keyboard support
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') nextCard();
+                if (e.key === 'ArrowLeft') prevCard();
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    flipCard();
+                }
+            });
+        </script>
+
+        {% else %}
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-10 text-center text-slate-400 max-w-xl mx-auto">
+            No flashcards generated for this material.
+        </div>
+        {% endif %}
+
+        <div class="flex justify-center gap-3 mt-10">
+            <a href="/concepts/{{ material.id }}" class="bg-indigo-700 hover:bg-indigo-600 px-4 py-2 rounded-lg text-sm font-medium">Concepts</a>
+            <a href="/quiz/{{ material.id }}" class="bg-green-700 hover:bg-green-600 px-4 py-2 rounded-lg text-sm font-medium">Quiz</a>
+            <a href="/ask/{{ material.id }}" class="bg-purple-700 hover:bg-purple-600 px-4 py-2 rounded-lg text-sm font-medium">Ask BusyAI</a>
+        </div>
+    </div>
+</body>
+</html>

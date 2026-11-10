@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Profile - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-slate-200 min-h-screen flex flex-col justify-between p-4 fixed left-0 top-0">
+        <div>
+            <div class="flex items-center space-x-3 px-3 py-4 mb-6 border-b border-slate-100">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white text-xl">🧠</div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-lg leading-tight">BrainBuddy</h1>
+                    <p class="text-xs text-slate-400">Study & Revision AI</p>
+                </div>
+            </div>
+
+            <nav class="space-y-1.5 text-sm font-medium">
+                <a href="/dashboard" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>📊</span><span>Dashboard</span>
+                </a>
+                <a href="/materials" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>📚</span><span>Study Materials</span>
+                </a>
+                <a href="/upload" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>📤</span><span>Upload PDF</span>
+                </a>
+                <a href="/ask" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>💬</span><span>Ask BrainBuddy</span>
+                </a>
+                <a href="/revision" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+                    <span>🎯</span><span>Revision Center</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="border-t border-slate-100 pt-4">
+            <a href="/profile" class="flex items-center space-x-3 px-3 py-2 mb-2 bg-slate-50 rounded-xl hover:bg-slate-100 transition">
+                <div class="w-9 h-9 bg-indigo-100 text-indigo-700 font-bold rounded-lg flex items-center justify-center text-sm">
+                    {{ user.name[0] if user else 'S' }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-slate-800 truncate">My Profile</p>
+                    <p class="text-xs text-slate-400 truncate">View stats</p>
+                </div>
+            </a>
+            <a href="/logout" class="w-full flex items-center space-x-3 px-3.5 py-2 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition">
+                <span>🚪</span><span>Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64 p-8 max-w-4xl space-y-6">
+        
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Student Profile & Analytics</h1>
+            <p class="text-sm text-slate-500 mt-1">Manage your academic progress and preferences</p>
+        </div>
+
+        <!-- Profile Card -->
+        <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex items-center space-x-6">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 text-3xl font-extrabold rounded-2xl flex items-center justify-center shadow-inner">
+                {{ user.name[0] if user else 'S' }}
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">{{ user.name if user else 'Student User' }}</h2>
+                <p class="text-sm text-slate-500">{{ user.email if user else 'student@college.edu' }}</p>
+                <span class="inline-block mt-2 text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+                    Active Student Account
+                </span>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm text-center">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Materials</p>
+                <p class="text-3xl font-extrabold text-indigo-600 mt-1">{{ total_materials }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm text-center">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quizzes Taken</p>
+                <p class="text-3xl font-extrabold text-emerald-600 mt-1">{{ total_quizzes }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm text-center">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Average Score</p>
+                <p class="text-3xl font-extrabold text-purple-600 mt-1">{{ avg_score }}%</p>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>

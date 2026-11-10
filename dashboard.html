@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <!-- BrainBuddy Theme Support -->
+    <script>(function(){try{var t=localStorage.getItem('brainbuddy-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+    <link rel="stylesheet" href="/static/theme.css">
+    <script src="/static/theme.js" defer></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <nav class="bg-slate-900 border-b border-slate-700 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-400">BrainBuddy</h1>
+            <div class="flex items-center gap-5">
+                <span class="text-slate-300 hidden sm:inline">Welcome, <span class="text-white font-medium">{{ user.name }}</span></span>
+                <a href="/focus-zone" class="text-slate-300 hover:text-blue-400 font-medium">🎯 Focus Zone</a>
+                <a href="/analytics" class="text-slate-300 hover:text-blue-400 font-medium">Analytics</a>
+                <a href="/logout" class="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded-lg font-medium transition">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Upload -->
+        <div class="lg:col-span-1">
+            <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 text-blue-400 border-b border-slate-700 pb-2">Upload Study Material</h2>
+
+                {% if error %}
+                <div class="bg-red-900/40 border border-red-500 text-red-200 px-4 py-3 rounded-lg mb-4 text-sm">{{ error }}</div>
+                {% endif %}
+
+                <form action="/upload" method="POST" enctype="multipart/form-data" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-300 mb-1">Subject / Document Title</label>
+                        <input type="text" name="title" required
+                            class="w-full px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. Operating Systems">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-300 mb-1">PDF File</label>
+                        <input type="file" name="file" accept=".pdf" required
+                            class="w-full text-sm text-slate-300 bg-slate-800 border border-slate-600 rounded-lg file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition shadow-lg shadow-blue-900/30">
+                        Upload & Analyze PDF
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Materials -->
+        <div class="lg:col-span-2">
+            <h2 class="text-2xl font-bold mb-6 text-white">Your Study Library</h2>
+
+            {% if materials %}
+            <div class="grid gap-5">
+                {% for mat in materials %}
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">{{ mat.title }}</h3>
+                        <p class="text-sm text-slate-400 mt-1">
+                            Uploaded:
+                            {% if mat.uploaded_at %}
+                                {{ mat.uploaded_at.strftime('%Y-%m-%d') }}
+                            {% else %}
+                                Recently
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="/summary/{{ mat.id }}" class="bg-blue-900/50 text-blue-300 border border-blue-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-800 transition">Summary</a>
+                        <a href="/concepts/{{ mat.id }}" class="bg-indigo-900/50 text-indigo-300 border border-indigo-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-indigo-800 transition">Concepts</a>
+                        <a href="/flashcards/{{ mat.id }}" class="bg-yellow-900/40 text-yellow-300 border border-yellow-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-yellow-800/40 transition">Flashcards</a>
+                        <a href="/quiz/{{ mat.id }}" class="bg-green-900/40 text-green-300 border border-green-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-green-800/40 transition">Quiz</a>
+                        <a href="/ask/{{ mat.id }}" class="bg-purple-900/40 text-purple-300 border border-purple-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-purple-800/40 transition">BusyAI</a>
+                        <a href="/revision/{{ mat.id }}" class="bg-pink-900/40 text-pink-300 border border-pink-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-pink-800/40 transition">Revision</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bg-slate-900 border border-slate-700 text-slate-300 p-10 rounded-2xl text-center shadow-xl">
+                <h3 class="text-lg font-bold text-white mb-2">No Materials Found</h3>
+                <p>Upload your first PDF from the left panel to begin your AI-assisted study session.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

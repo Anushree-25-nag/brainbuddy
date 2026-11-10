@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Attempt - BrainBuddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            transform: translateY(-1px);
+        }
+        .timer-normal { color: #60a5fa; }
+        .timer-warning { color: #fbbf24; animation: pulse 1s infinite; }
+        .timer-critical { color: #ef4444; animation: pulse 0.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .nav-btn {
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+            transition: all 0.2s ease; cursor: pointer;
+        }
+        .nav-btn.unanswered { background: rgba(100, 116, 139, 0.3); color: #94a3b8; }
+        .nav-btn.answered { background: rgba(34, 197, 94, 0.3); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .nav-btn.review { background: rgba(251, 191, 36, 0.3); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+        .nav-btn.active { border: 2px solid #818cf8; box-shadow: 0 0 10px rgba(129, 140, 248, 0.3); }
+        .option-btn { transition: all 0.2s ease; cursor: pointer; }
+        .option-btn:hover { background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.5); }
+        .option-btn.selected { background: rgba(99, 102, 241, 0.25); border-color: #6366f1; }
+        .quiz-disabled { pointer-events: none; opacity: 0.5; }
+        .expired-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen">
+
+    <!-- TOP BAR + TIMER -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-700">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <span class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">🧠 BrainBuddy</span>
+                <span class="text-slate-500 text-sm hidden sm:inline">{{ material.filename }}</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-center">
+                    <p class="text-xs text-slate-400">Time Remaining</p>
+                    <p id="timer-display" class="text-2xl font-mono font-bold timer-normal">02:00</p>
+                </div>
+                <div class="text-center hidden sm:block">
+                    <p class="text-xs text-slate-400">Answered</p>
+                    <p id="answered-count" class="text-lg font-semibold text-green-400">0/{{ total_questions }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="h-1 bg-slate-800">
+            <div id="timer-progress" class="h-full bg-indigo-500 transition-all duration-1000" style="width:100%"></div>
+        </div>
+    </div>
+
+    <!-- EXPIRED OVERLAY -->
+    <div id="expired-overlay" class="expired-overlay" style="display:none;">
+        <div class="glass-card rounded-2xl p-8 max-w-md text-center">
+            <span class="text-6xl block mb-4">⏰</span>
+            <h2 class="text-2xl font-bold text-red-400 mb-2">Time's Up!</h2>
+            <p class="text-slate-300 mb-6">Your quiz time has expired. Please restart the quiz to try again.</p>
+            <a href="/quiz/{{ material.id }}" class="btn-primary text-white px-6 py-3 rounded-lg font-medium inline-block">
+                🔄 Restart Quiz
+            </a>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 pt-24 pb-8">
+        <div class="flex gap-6 flex-col lg:flex-row">
+
+            <!-- QUESTION NAVIGATION PANEL -->
+            <div class="lg:w-64 flex-shrink-0">
+                <div class="glass-card rounded-xl p-4 lg:sticky lg:top-28">
+                    <h3 class="text-sm font-semibold text-slate-400 mb-3">Question Navigation</h3>
+                    <div id="nav-grid" class="grid grid-cols-5 gap-2 mb-4">
+                        {% for q in questions %}
+                        <button type="button" onclick="goToQuestion({{ loop.index0 }})"
+                                id="nav-{{ loop.index0 }}"
+                                class="nav-btn unanswered"
+                                title="Question {{ loop.index }}">
+                            {{ loop.index }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <div class="space-y-1 text-xs text-slate-400">
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-green-500/30 border border-green-500/40 inline-block"></span> Answered</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-amber-500/30 border border-amber-500/40 inline-block"></span> Marked for Review</div>
+                        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-slate-500/30 inline-block"></span> Unanswered</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUESTIONS CONTAINER -->
+            <div class="flex-1" id="quiz-area">
+                {% for q in questions %}
+                {% set qid = q.id|string %}
+                {% set qtype = q.question_type or 'mcq' %}
+                {% set opts = q.options if q.options is mapping else {} %}
+
+                <div id="question-{{ loop.index0 }}"
+                     data-qid="{{ q.id }}"
+                     class="question-slide glass-card rounded-xl p-6 mb-4"
+                     style="display:{% if loop.index0 == 0 %}block{% else %}none{% endif %};">
+
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <span class="text-xs text-indigo-400 font-medium">Question {{ loop.index }} of {{ total_questions }}</span>
+                            {% if q.topic %}<span class="text-xs text-slate-500 ml-2">• {{ q.topic }}</span>{% endif %}
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded-full
+                            {% if qtype == 'mcq' %}bg-indigo-500/20 text-indigo-300
+                            {% elif qtype == 'true_false' %}bg-purple-500/20 text-purple-300
+                            {% else %}bg-teal-500/20 text-teal-300{% endif %}">
+                            {% if qtype == 'mcq' %}MCQ
+                            {% elif qtype == 'true_false' %}True/False
+                            {% else %}Fill in the Blank{% endif %}
+                        </span>
+                    </div>
+
+                    <h2 class="text-lg font-semibold mb-6">{{ q.question_text }}</h2>
+
+                    {% if qtype in ['mcq', 'true_false'] %}
+                    <div class="space-y-3">
+                        {% if opts %}
+                            {% for key, value in opts.items() %}
+                            <button type="button"
+                                    onclick="selectOption({{ loop.index0 }}, '{{ key }}', this)"
+                                    data-qid="{{ q.id }}"
+                                    data-option="{{ key }}"
+                                    class="option-btn w-full text-left p-4 rounded-lg border border-slate-600/50 bg-slate-800/30 flex items-center gap-3
+                                    {% if saved_answers.get(qid) == key %}selected{% endif %}">
+                                <span class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 text-sm font-semibold flex-shrink-0">{{ key }}</span>
+                                <span>{{ value }}</span>
+                            </button>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-red-400 text-sm">⚠️ Options missing for this question.</p>
+                        {% endif %}
+                    </div>
+
+                    {% else %}
+                    <div class="mt-4">
+                        <input type="text"
+                               id="fill-{{ q.id }}"
+                               class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-indigo-500 focus:outline-none"
+                               placeholder="Type your answer..."
+                               value="{{ saved_answers.get(qid, '') }}"
+                               oninput="saveFillAnswer('{{ q.id }}', this.value)">
+                    </div>
+                    {% endif %}
+
+                    <div class="flex justify-between items-center mt-8 pt-4 border-t border-slate-700/50">
+                        <button type="button" onclick="goToQuestion({{ loop.index0 - 1 }})"
+                                class="px-4 py-2 rounded-lg bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 text-sm {% if loop.index0 == 0 %}invisible{% endif %}">
+                            ← Previous
+                        </button>
+
+                        <button type="button" onclick="toggleReview({{ loop.index0 }})"
+                                id="review-btn-{{ loop.index0 }}"
+                                class="px-4 py-2 rounded-lg border border-amber-500/40 text-amber-400 hover:bg-amber-500/10 text-sm">
+                            🔖 Mark for Review
+                        </button>
+
+                        {% if loop.index0 < total_questions - 1 %}
+                        <button type="button" onclick="goToQuestion({{ loop.index0 + 1 }})"
+                                class="px-4 py-2 rounded-lg bg-indigo-500/30 text-indigo-300 hover:bg-indigo-500/40 text-sm">
+                            Next →
+                        </button>
+                        {% else %}
+                        <button type="button" onclick="confirmSubmit()"
+                                class="btn-primary text-white px-6 py-2 rounded-lg text-sm font-medium">
+                            ✅ Submit Quiz
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- SUBMIT SECTION -->
+                <div id="submit-section" class="glass-card rounded-xl p-6 text-center mt-4">
+                    <p class="text-slate-400 mb-4" id="submit-summary">0 answered</p>
+                    <form id="submit-form" method="post" action="/quiz/{{ material.id }}/attempt/{{ attempt.id }}/submit">
+                        <div id="hidden-answers"></div>
+                        <button type="button" onclick="confirmSubmit()" class="btn-primary text-white px-8 py-3 rounded-lg font-medium text-lg">
+                            ✅ Submit Quiz
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function () {
+    const materialId = {{ material.id | int }};
+    const attemptId = {{ attempt.id | int }};
+    const totalQuestions = {{ total_questions | int }};
+    let remainingSeconds = {{ remaining_seconds | int }};
+
+    let answers = {{ saved_answers | default({}) | tojson | safe }};
+    let markedForReview = {{ marked_review | default([]) | tojson | safe }};
+
+    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) answers = {};
+    if (!Array.isArray(markedForReview)) markedForReview = [];
+    markedForReview = markedForReview.map(String);
+
+    let currentQuestion = 0;
+    let quizExpired = false;
+    let timerInterval = null;
+    let serverCheckInterval = null;
+    let saveTimeout = null;
+
+    function getQuestionId(index) {
+        const slide = document.getElementById('question-' + index);
+        return slide ? String(slide.getAttribute('data-qid') || '') : '';
+    }
+
+    function startTimer() {
+        updateTimerDisplay();
+        timerInterval = setInterval(function () {
+            remainingSeconds -= 1;
+            updateTimerDisplay();
+            if (remainingSeconds <= 0) expireQuiz();
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const display = document.getElementById('timer-display');
+        const progress = document.getElementById('timer-progress');
+        if (!display || !progress) return;
+
+        const secsLeft = Math.max(0, remainingSeconds);
+        const mins = Math.floor(secsLeft / 60);
+        const secs = secsLeft % 60;
+        display.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+
+        const pct = Math.min(100, Math.max(0, (secsLeft / 120) * 100));
+        progress.style.width = pct + '%';
+
+        if (secsLeft <= 10) {
+            display.className = 'text-2xl font-mono font-bold timer-critical';
+            progress.style.background = '#ef4444';
+        } else if (secsLeft <= 30) {
+            display.className = 'text-2xl font-mono font-bold timer-warning';
+            progress.style.background = '#fbbf24';
+        } else {
+            display.className = 'text-2xl font-mono font-bold timer-normal';
+            progress.style.background = '#6366f1';
+        }
+    }
+
+    function expireQuiz() {
+        if (quizExpired) return;
+        quizExpired = true;
+        if (timerInterval) clearInterval(timerInterval);
+        if (serverCheckInterval) clearInterval(serverCheckInterval);
+        if (saveTimeout) clearTimeout(saveTimeout);
+
+        const area = document.getElementById('quiz-area');
+        const overlay = document.getElementById('expired-overlay');
+        if (area) area.classList.add('quiz-disabled');
+        if (overlay) overlay.style.display = 'flex';
+
+        fetch('/quiz/' + materialId + '/attempt/' + attemptId + '/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answers: answers, marked_for_review: markedForReview })
+        }).catch(function () {});
+    }
+
+    function checkServerTime() {
+        fetch('/quiz/' + materialId + '/check-expiry/' + attemptId)
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                if (data.expired) expireQuiz();
+                else if (typeof data.remaining_seconds === 'number') remainingSeconds = data.remaining_seconds;
+            })
+            .catch(function (e) { console.warn('Server check failed:', e); });
+    }
+
+    function goToQuestion(index) {
+        if (quizExpired || index < 0 || index >= totalQuestions) return;
+        document.querySelectorAll('.question-slide').forEach(function (el) { el.style.display = 'none'; });
+        const slide = document.getElementById('question-' + index);
+        if (slide) slide.style.display = 'block';
+        currentQuestion = index;
+        updateNavButtons();
+    }
+
+    function updateNavButtons() {
+        for (let i = 0; i < totalQuestions; i++) {
+            const btn = document.getElementById('nav-' + i);
+            if (!btn) continue;
+            btn.className = 'nav-btn';
+            const qid = getQuestionId(i);
+            const ans = answers[qid];
+
+            if (markedForReview.indexOf(qid) >= 0) btn.classList.add('review');
+            else if (ans && String(ans).trim() !== '') btn.classList.add('answered');
+            else btn.classList.add('unanswered');
+
+            if (i === currentQuestion) btn.classList.add('active');
+        }
+
+        const answeredCount = Object.keys(answers).filter(function (k) {
+            return answers[k] && String(answers[k]).trim() !== '';
+        }).length;
+
+        const ac = document.getElementById('answered-count');
+        if (ac) ac.textContent = answeredCount + '/' + totalQuestions;
+
+        const unanswered = totalQuestions - answeredCount;
+        const summary = document.getElementById('submit-summary');
+        if (summary) {
+            summary.textContent = answeredCount + ' answered, ' + unanswered + ' unanswered, ' + markedForReview.length + ' marked for review';
+        }
+    }
+
+    window.goToQuestion = goToQuestion;
+
+    window.selectOption = function (questionIndex, option, btn) {
+        if (quizExpired) return;
+        const qid = String(btn.getAttribute('data-qid'));
+        answers[qid] = option;
+
+        const slide = document.getElementById('question-' + questionIndex);
+        if (slide) {
+            slide.querySelectorAll('.option-btn').forEach(function (b) { b.classList.remove('selected'); });
+        }
+        btn.classList.add('selected');
+        updateNavButtons();
+        autoSave();
+    };
+
+    window.saveFillAnswer = function (qid, value) {
+        if (quizExpired) return;
+        answers[String(qid)] = value;
+        updateNavButtons();
+        autoSave();
+    };
+
+    window.toggleReview = function (questionIndex) {
+        if (quizExpired) return;
+        const qid = getQuestionId(questionIndex);
+        if (!qid) return;
+
+        const btn = document.getElementById('review-btn-' + questionIndex);
+        const idx = markedForReview.indexOf(qid);
+
+        if (idx >= 0) {
+            markedForReview.splice(idx, 1);
+            if (btn) {
+                btn.innerHTML = '🔖 Mark for Review';
+                btn.classList.remove('bg-amber-500/20');
+            }
+        } else {
+            markedForReview.push(qid);
+            if (btn) {
+                btn.innerHTML = '✅ Marked for Review';
+                btn.classList.add('bg-amber-500/20');
+            }
+        }
+        updateNavButtons();
+        autoSave();
+    };
+
+    function autoSave() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(function () {
+            fetch('/quiz/' + materialId + '/attempt/' + attemptId + '/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    answers: answers,
+                    marked_for_review: markedForReview
+                })
+            })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                if (data && data.error === 'expired') expireQuiz();
+            })
+            .catch(function () {});
+        }, 500);
+    }
+
+    window.confirmSubmit = function () {
+        if (quizExpired) return;
+
+        const answeredCount = Object.keys(answers).filter(function (k) {
+            return answers[k] && String(answers[k]).trim() !== '';
+        }).length;
+        const unanswered = totalQuestions - answeredCount;
+
+        let msg = 'You have answered ' + answeredCount + ' of ' + totalQuestions + ' questions.';
+        if (unanswered > 0) msg += ' ' + unanswered + ' question(s) are unanswered.';
+        if (markedForReview.length > 0) msg += '\n' + markedForReview.length + ' question(s) marked for review.';
+        msg += '\n\nAre you sure you want to submit?';
+
+        if (confirm(msg)) submitQuiz();
+    };
+
+    function submitQuiz() {
+        const container = document.getElementById('hidden-answers');
+        const form = document.getElementById('submit-form');
+        if (!container || !form) return;
+
+        container.innerHTML = '';
+        Object.keys(answers).forEach(function (qid) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'answer_' + qid;
+            input.value = answers[qid];
+            container.appendChild(input);
+        });
+        form.submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        markedForReview.forEach(function (qid) {
+            for (let i = 0; i < totalQuestions; i++) {
+                if (getQuestionId(i) === String(qid)) {
+                    const btn = document.getElementById('review-btn-' + i);
+                    if (btn) {
+                        btn.innerHTML = '✅ Marked for Review';
+                        btn.classList.add('bg-amber-500/20');
+                    }
+                }
+            }
+        });
+
+        updateNavButtons();
+        startTimer();
+        checkServerTime();
+        serverCheckInterval = setInterval(checkServerTime, 10000);
+    });
+
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && !quizExpired) checkServerTime();
+    });
+})();
+</script>
+</body>
+</html>
